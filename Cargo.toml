@@ -1,0 +1,16 @@
+[package]
+name = "debate-stats"
+description = "A library for doing statistics on competitive debate tournaments."
+version = "0.0.1"
+authors = ["Riley Shahar <riley.shahar@gmail.com>"]
+edition = "2018"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/nihilistkitten/debate-stats"
+readme = "README.md"
+keywords = ["debate", "statistics"]
+categories = ["mathematics"]
+
+[dependencies]
+
+[dev-dependencies]
+version-sync = "0.9.2"
