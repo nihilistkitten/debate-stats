@@ -6,3 +6,12 @@
     invalid_codeblock_attributes,
     private_intra_doc_links
 )]
+
+mod error;
+mod event;
+mod tournament;
+mod util;
+
+pub use error::{Error, Result};
+pub use event::Event;
+pub use tournament::Tournament;
