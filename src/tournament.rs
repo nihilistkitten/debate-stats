@@ -1,8 +1,8 @@
 //! For representing individual tournaments.
 
-use crate::{Event, Result};
-
 mod from_url;
+
+use crate::{Event, Result};
 
 /// A tournament.
 #[derive(Debug)]

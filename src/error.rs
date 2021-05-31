@@ -4,6 +4,8 @@ use std::error::Error as StdError;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::result::Result as StdResult;
 
+use quick_xml::de::DeError;
+
 /// A [`Result`](StdResult) alias where the failure case is an [`Error`].
 pub type Result<T> = StdResult<T, Error>;
 
@@ -32,7 +34,11 @@ pub enum Error {
     ),
 
     /// Wraps [`reqwest::Error`] with the URL that couldn't be accessed correctly.
-    HttpRequest(reqwest::Error),
+    /// TODO: shouldn't need an option, instead we should handle 404s well.
+    HttpRequest(Option<reqwest::Error>),
+
+    /// Could not process the tabroom API.
+    ApiProcessingFailed(DeError),
 }
 
 /// The types of tournament data that we can fail to parse.
@@ -80,15 +86,21 @@ impl Display for Error {
                 format!("we don't currently scrape that tournament host: {}", host)
             }
             Self::HtmlParseFailed(inner) => format!("unable to find the tournament's {}", inner),
-            Self::HttpRequest(source) => {
-                format!(
-                    "unable to scrape url '{}': {}",
-                    source.url().map_or(
-                        "internal error: no url found".to_string(),
-                        url::Url::to_string
-                    ),
-                    source
-                )
+            Self::HttpRequest(source) => match source {
+                Some(source) => {
+                    format!(
+                        "unable to scrape url '{}': {}",
+                        source.url().map_or(
+                            "internal error: no url found".to_string(),
+                            url::Url::to_string
+                        ),
+                        source
+                    )
+                }
+                None => "unable to scrape url".to_string(),
+            },
+            Self::ApiProcessingFailed(source) => {
+                format!("unable to process the tabroom api: {}", source)
             }
         };
         write!(f, "{}", message)
@@ -99,7 +111,11 @@ impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
             Self::UrlConversion { source, .. } => Some(source),
-            Self::HttpRequest(source) => Some(source),
+            Self::HttpRequest(source) => match source {
+                Some(source) => Some(source),
+                None => None,
+            },
+            Self::ApiProcessingFailed(source) => Some(source),
             Self::UnsupportedHost(_) | Self::HtmlParseFailed(_) => None,
         }
     }
@@ -107,7 +123,13 @@ impl StdError for Error {
 
 impl From<reqwest::Error> for Error {
     fn from(source: reqwest::Error) -> Self {
-        Self::HttpRequest(source)
+        Self::HttpRequest(Some(source))
+    }
+}
+
+impl From<DeError> for Error {
+    fn from(source: DeError) -> Self {
+        Self::ApiProcessingFailed(source)
     }
 }
 

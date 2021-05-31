@@ -2,9 +2,13 @@
 //!
 //! Thanks to tabroom for providing a convenient API!
 
+mod orm;
+mod process_api;
+
 use crate::util::network;
 use crate::{Error, Result, SearchingFor, Tournament};
 use network::{fetch_url, process_url};
+use process_api::process_api;
 use reqwest::blocking::Response;
 use url::Url;
 
@@ -14,7 +18,7 @@ impl Tournament {
         // TODO: Should we call with a client here?
         let resp = fetch_url(api_url, None)?;
         let xml = get_xml_body(resp)?;
-        process_api(xml)
+        process_api(&xml)
     }
 }
 
@@ -45,14 +49,13 @@ fn get_id(url: &Url) -> Result<u32> {
 }
 
 /// Get the XML API body from the reqwest response.
-fn get_xml_body(_response: Response) -> Result<String> {
-    todo!();
-}
-
-/// Process the XML into a Tournament.
-fn process_api(_xml: String) -> Result<Tournament> {
-    // Impl: probably this should use serde and quick-xml
-    todo!()
+fn get_xml_body(response: Response) -> Result<String> {
+    dbg!(response.status());
+    if response.status().is_success() {
+        Ok(response.text()?)
+    } else {
+        Err(Error::HttpRequest(None))
+    }
 }
 
 #[cfg(test)]

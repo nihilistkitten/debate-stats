@@ -1,13 +1,13 @@
 //! Generate tournaments from URLs.
 
+mod tabroom;
+
 use std::convert::{TryFrom, TryInto};
 
 use crate::util::network;
 use crate::{Error, Result, Tournament};
 use network::process_url;
 use url::Url;
-
-mod tabroom;
 
 impl Tournament {
     pub(super) fn from_url_impl(url_str: &str) -> Result<Self> {
