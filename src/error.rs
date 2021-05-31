@@ -24,6 +24,29 @@ pub enum Error {
     /// Only certain tournament hosts are supported; see
     /// [`Tournament::from_url`](crate::Tournament::from_url)
     UnsupportedHost(String),
+
+    /// A tournament HTML page failed to parse.
+    HtmlParseFailed(
+        /// The tournament data we were unable to parse from the tournament page.
+        SearchingFor,
+    ),
+}
+
+/// The types of tournament data that we can fail to parse.
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum SearchingFor {
+    /// The tournament's ID number.
+    ID,
+}
+
+impl Display for SearchingFor {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        let message = match self {
+            Self::ID => "ID".to_string(),
+        };
+        write!(f, "{}", message)
+    }
 }
 
 impl Error {
@@ -53,6 +76,7 @@ impl Display for Error {
             Self::UnsupportedHost(host) => {
                 format!("we don't currently scrape that tournament host: {}", host)
             }
+            Self::HtmlParseFailed(inner) => format!("unable to find the tournament's {}", inner),
         };
         write!(f, "{}", message)
     }
@@ -63,6 +87,7 @@ impl StdError for Error {
         match self {
             Self::UrlConversion { source, .. } => Some(source),
             Self::UnsupportedHost(_) => None,
+            Self::HtmlParseFailed(_) => None,
         }
     }
 }

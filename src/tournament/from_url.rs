@@ -49,7 +49,7 @@ mod tests {
     use super::*;
 
     fn get_tabhost_from_str(url: &str) -> Result<TabHost> {
-        (&Url::parse(url).map_err(|e| Error::url_conversion(e, url))?).try_into()
+        (&network::process_url(url)?).try_into()
     }
 
     #[test]
