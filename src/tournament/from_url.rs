@@ -4,19 +4,20 @@ use std::convert::{TryFrom, TryInto};
 
 use crate::util::network;
 use crate::{Error, Result, Tournament};
+use network::process_url;
 use url::Url;
 
 mod tabroom;
 
 impl Tournament {
     pub(super) fn from_url_impl(url_str: &str) -> Result<Self> {
-        let url = network::process_url(url_str)?;
+        let url = process_url(url_str)?;
         match (&url).try_into()? {
-            TabHost::Tabroom => Self::from_tabroom(url),
+            TabHost::Tabroom => Self::from_tabroom(&url),
         }
     }
 
-    fn from_tabroom(url: Url) -> Result<Self> {
+    fn from_tabroom(url: &Url) -> Result<Self> {
         Self::from_tabroom_impl(url)
     }
 }
@@ -49,7 +50,7 @@ mod tests {
     use super::*;
 
     fn get_tabhost_from_str(url: &str) -> Result<TabHost> {
-        (&network::process_url(url)?).try_into()
+        (&process_url(url)?).try_into()
     }
 
     #[test]
