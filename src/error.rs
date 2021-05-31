@@ -30,6 +30,9 @@ pub enum Error {
         /// The tournament data we were unable to parse from the tournament page.
         SearchingFor,
     ),
+
+    /// Wraps [`reqwest::Error`] with the URL that couldn't be accessed correctly.
+    HttpRequest(reqwest::Error),
 }
 
 /// The types of tournament data that we can fail to parse.
@@ -77,6 +80,16 @@ impl Display for Error {
                 format!("we don't currently scrape that tournament host: {}", host)
             }
             Self::HtmlParseFailed(inner) => format!("unable to find the tournament's {}", inner),
+            Self::HttpRequest(source) => {
+                format!(
+                    "unable to scrape url '{}': {}",
+                    source.url().map_or(
+                        "internal error: no url found".to_string(),
+                        url::Url::to_string
+                    ),
+                    source
+                )
+            }
         };
         write!(f, "{}", message)
     }
@@ -86,9 +99,15 @@ impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
             Self::UrlConversion { source, .. } => Some(source),
-            Self::UnsupportedHost(_) => None,
-            Self::HtmlParseFailed(_) => None,
+            Self::HttpRequest(source) => Some(source),
+            Self::UnsupportedHost(_) | Self::HtmlParseFailed(_) => None,
         }
+    }
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(source: reqwest::Error) -> Self {
+        Self::HttpRequest(source)
     }
 }
 

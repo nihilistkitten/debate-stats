@@ -10,8 +10,11 @@ pub fn process_url(url: &str) -> Result<Url> {
 }
 
 /// Fetch a url.
-pub fn fetch_url(_url: Url, _client: Option<Client>) -> Result<Response> {
-    todo!();
+pub fn fetch_url(url: Url, client: Option<Client>) -> Result<Response> {
+    // The ? and the immediate Ok is a little janky, but we apparently need this because our `From`
+    // impl is for `Error` and not `Result`, and we can't impl it for `Result` because it's a
+    // foreign type (it's an alias, not a newtype).
+    Ok(client.unwrap_or_default().get(url).send()?)
 }
 
 #[cfg(test)]
