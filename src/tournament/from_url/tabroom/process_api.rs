@@ -23,6 +23,7 @@ fn process_api_impl(
             .map(|e| Event::new(e.event_name))
             .collect(),
         start_date: tournament_results.tourn.start_date,
+        end_date: tournament_results.tourn.end_date,
     })
 }
 
@@ -48,6 +49,8 @@ mod tests {
         expected_event_names: Option<Vec<String>>,
         /// The start date we expect
         expected_start_date: Option<NaiveDate>,
+        /// The end date we expect
+        expected_end_date: Option<NaiveDate>,
     }
 
     impl TestCase {
@@ -100,6 +103,9 @@ mod tests {
                     "Start dates don't match."
                 )
             }
+            if let Some(end_date) = self.expected_end_date {
+                assert_eq!(tournament.end_date(), &end_date, "End dates don't match.")
+            }
             Ok(())
         }
 
@@ -137,6 +143,14 @@ mod tests {
                 ..self
             }
         }
+
+        /// Add the expected end date
+        fn end_date(self, year: i32, month: u32, day: u32) -> Self {
+            Self {
+                expected_end_date: Some(NaiveDate::from_ymd(year, month, day)),
+                ..self
+            }
+        }
     }
 
     /// This uses `serde_path_to_error` to figure out where in the serialized data the error is.
@@ -163,6 +177,7 @@ mod tests {
             .name("National Parliamentary Debate Invitational")
             .events(vec!["JV Parli", "Open Parli"])
             .start_date(2020, 11, 14)
+            .end_date(2020, 11, 16)
             .run()
     }
 
@@ -200,6 +215,7 @@ mod tests {
                 "World School Debate",
             ])
             .start_date(2020, 9, 19)
+            .end_date(2020, 9, 22)
             .run()
     }
 }

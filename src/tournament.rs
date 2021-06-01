@@ -12,6 +12,7 @@ pub struct Tournament {
     name: String,
     events: Vec<Event>,
     start_date: NaiveDate,
+    end_date: NaiveDate,
 }
 
 impl Tournament {
@@ -84,5 +85,29 @@ impl Tournament {
     #[must_use]
     pub const fn start_date(&self) -> &NaiveDate {
         &self.start_date
+    }
+
+    /// Get a reference to the tournament's end date.
+    ///
+    /// Note that this is one day after the last day of the tournament; i.e., a day later than the
+    /// end of the range displayed in the "Tournament" section under "Dates & Deadlines" in the tab
+    /// sidebar.
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use debate_stats::Tournament;
+    /// #
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// #
+    /// let url = "https://www.tabroom.com/index/tourn/index.mhtml?tourn_id=17253";
+    /// let tournament = Tournament::from_url(url)?;
+    /// assert_eq!(tournament.end_date().to_string(), "2020-11-16"); // the tournament ended 11/15
+    /// #
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[must_use]
+    pub const fn end_date(&self) -> &NaiveDate {
+        &self.end_date
     }
 }

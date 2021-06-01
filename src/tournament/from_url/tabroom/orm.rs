@@ -11,8 +11,8 @@ pub(super) struct Tourn {
     pub tourn_name: String,
     #[serde(rename = "STARTDATE", with = "tabroom_dates")]
     pub start_date: NaiveDate,
-    #[serde(rename = "ENDDATE")]
-    pub end_date: String,
+    #[serde(rename = "ENDDATE", with = "tabroom_dates")]
+    pub end_date: NaiveDate,
     #[serde(rename = "DOWNLOADSITE")]
     pub download_site: String,
 }
