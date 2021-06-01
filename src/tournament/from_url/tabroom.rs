@@ -50,11 +50,11 @@ fn get_id(url: &Url) -> Result<u32> {
 
 /// Get the XML API body from the reqwest response.
 fn get_xml_body(response: Response) -> Result<String> {
-    dbg!(response.status());
-    if response.status().is_success() {
+    let status = response.status();
+    if status.is_success() {
         Ok(response.text()?)
     } else {
-        Err(Error::HttpRequest(None))
+        Err(Error::HttpFailure(status))
     }
 }
 

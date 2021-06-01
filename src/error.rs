@@ -33,9 +33,11 @@ pub enum Error {
         SearchingFor,
     ),
 
-    /// Wraps [`reqwest::Error`] with the URL that couldn't be accessed correctly.
-    /// TODO: shouldn't need an option, instead we should handle 404s well.
-    HttpRequest(Option<reqwest::Error>),
+    /// Wraps [`reqwest::Error`].
+    HttpRequest(reqwest::Error),
+
+    /// Wraps [`reqwest::StatusCode`] when we recieved a non-success status code.
+    HttpFailure(reqwest::StatusCode),
 
     /// Could not process the tabroom API.
     ApiProcessingFailed(DeError),
@@ -86,19 +88,17 @@ impl Display for Error {
                 format!("we don't currently scrape that tournament host: {}", host)
             }
             Self::HtmlParseFailed(inner) => format!("unable to find the tournament's {}", inner),
-            Self::HttpRequest(source) => match source {
-                Some(source) => {
-                    format!(
-                        "unable to scrape url '{}': {}",
-                        source.url().map_or(
-                            "internal error: no url found".to_string(),
-                            url::Url::to_string
-                        ),
-                        source
-                    )
-                }
-                None => "unable to scrape url".to_string(),
-            },
+            Self::HttpRequest(source) => format!(
+                "unable to scrape url '{}': {}",
+                source.url().map_or(
+                    "internal error: no url found".to_string(),
+                    url::Url::to_string
+                ),
+                source
+            ),
+            Self::HttpFailure(status) => {
+                format!("http request returned status {}", status.to_string())
+            }
             Self::ApiProcessingFailed(source) => {
                 format!("unable to process the tabroom api: {}", source)
             }
@@ -111,19 +111,16 @@ impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
             Self::UrlConversion { source, .. } => Some(source),
-            Self::HttpRequest(source) => match source {
-                Some(source) => Some(source),
-                None => None,
-            },
+            Self::HttpRequest(source) => Some(source),
             Self::ApiProcessingFailed(source) => Some(source),
-            Self::UnsupportedHost(_) | Self::HtmlParseFailed(_) => None,
+            Self::UnsupportedHost(_) | Self::HtmlParseFailed(_) | Self::HttpFailure(_) => None,
         }
     }
 }
 
 impl From<reqwest::Error> for Error {
     fn from(source: reqwest::Error) -> Self {
-        Self::HttpRequest(Some(source))
+        Self::HttpRequest(source)
     }
 }
 
