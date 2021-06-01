@@ -13,5 +13,5 @@ mod tournament;
 mod util;
 
 pub use error::{Error, Result, SearchingFor};
-pub use event::Event;
+pub use event::{Event, EventKind};
 pub use tournament::Tournament;

@@ -5,16 +5,12 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub(super) struct Tourn {
-    #[serde(rename = "ID")]
-    pub id: i32,
     #[serde(rename = "TOURNNAME")]
     pub tourn_name: String,
     #[serde(rename = "STARTDATE", with = "tabroom_dates")]
     pub start_date: NaiveDate,
     #[serde(rename = "ENDDATE", with = "tabroom_dates")]
     pub end_date: NaiveDate,
-    #[serde(rename = "DOWNLOADSITE")]
-    pub download_site: String,
 }
 
 mod tabroom_dates {

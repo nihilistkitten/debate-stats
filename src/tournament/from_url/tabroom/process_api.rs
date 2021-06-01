@@ -14,21 +14,24 @@ fn process_api_impl(
     deserializer: impl FnOnce(&str) -> std::result::Result<orm::TournamentResults, de::DeError>,
 ) -> Result<Tournament> {
     // this takes the generic parameter so it can be used for inspect_serde in the TestCase struct
-    let tournament_results = deserializer(xml)?;
+    let api = deserializer(xml)?;
+
     Ok(Tournament {
-        name: tournament_results.tourn.tourn_name,
-        events: tournament_results
+        name: api.tourn.tourn_name,
+        events: api
             .events
             .into_iter()
-            .map(|e| Event::new(e.event_name))
+            .map(|e| Event::new(e.abbr, e.event_name, e.event_type.into()))
             .collect(),
-        start_date: tournament_results.tourn.start_date,
-        end_date: tournament_results.tourn.end_date,
+        start_date: api.tourn.start_date,
+        end_date: api.tourn.end_date,
     })
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use chrono::NaiveDate;
 
     use super::*;
@@ -43,13 +46,13 @@ mod tests {
 
         /// The tournament's XML file.
         xml: String,
-        /// The name we expect
+
         expected_name: Option<String>,
-        /// The names of events we expect
-        expected_event_names: Option<Vec<String>>,
-        /// The start date we expect
+        expected_event_names: Option<HashSet<String>>,
+        expected_event_abbrs: Option<HashSet<String>>,
+        expected_debate_events: Option<usize>,
+        expected_speech_events: Option<usize>,
         expected_start_date: Option<NaiveDate>,
-        /// The end date we expect
         expected_end_date: Option<NaiveDate>,
     }
 
@@ -82,20 +85,58 @@ mod tests {
                     process_api(&self.xml)?
                 }
             };
+
             if let Some(name) = self.expected_name {
                 assert_eq!(name, tournament.name(), "Tournament names don't match.");
             }
+
             if let Some(event_names) = self.expected_event_names {
+                // Collect to a hashset because we're ok with reordering
                 assert_eq!(
                     tournament
                         .events()
                         .iter()
                         .map(Event::name)
-                        .collect::<Vec<_>>(),
+                        .map(String::from)
+                        .collect::<HashSet<_>>(),
                     event_names,
                     "Event names don't match."
                 )
             }
+
+            if let Some(event_abbrs) = self.expected_event_abbrs {
+                assert_eq!(
+                    tournament
+                        .events()
+                        .iter()
+                        .map(Event::abbr)
+                        .map(String::from)
+                        .collect::<HashSet<_>>(),
+                    event_abbrs,
+                    "Event abbreviations don't match."
+                );
+            }
+
+            if let Some(num_debate_events) = self.expected_debate_events {
+                assert_eq!(
+                    num_debate_events,
+                    // for some reason the compiler makes us write a closure here instead of
+                    // Event::is_debate, with a very weird error message I don't want to pick
+                    // through
+                    tournament.events().iter().filter(|e| e.is_debate()).count(),
+                    "The number of debate events don't match."
+                )
+            }
+
+            if let Some(num_speech_events) = self.expected_speech_events {
+                assert_eq!(
+                    num_speech_events,
+                    // ditto, see above
+                    tournament.events().iter().filter(|e| e.is_speech()).count(),
+                    "The number of speech events don't match."
+                )
+            }
+
             if let Some(start_date) = self.expected_start_date {
                 assert_eq!(
                     tournament.start_date(),
@@ -103,16 +144,18 @@ mod tests {
                     "Start dates don't match."
                 )
             }
+
             if let Some(end_date) = self.expected_end_date {
                 assert_eq!(tournament.end_date(), &end_date, "End dates don't match.")
             }
+
             Ok(())
         }
 
         /// Turn on serde error introspection. This will print the path at which the API failed to
         /// parse, if it fails to parse.
         #[allow(dead_code)] // this is only for when we're actuvely debugging
-        #[allow(clippy::clippy::missing_const_for_fn)] // this is a false positive
+        #[allow(clippy::missing_const_for_fn)] // this is a false positive
         fn inspect_serde(self) -> Self {
             Self {
                 inspect_serde: true,
@@ -132,6 +175,30 @@ mod tests {
         fn events(self, events: Vec<&str>) -> Self {
             Self {
                 expected_event_names: Some(events.into_iter().map(String::from).collect()),
+                ..self
+            }
+        }
+
+        /// Add abbreviations of expected events
+        fn event_abbrs(self, abbrs: Vec<&str>) -> Self {
+            Self {
+                expected_event_abbrs: Some(abbrs.into_iter().map(String::from).collect()),
+                ..self
+            }
+        }
+
+        /// Add expected event kind counts
+        ///
+        /// We test the counts instead of associating them with specific events because
+        ///   a) it makes writing tests a lot easier
+        ///   b) in the aggregate it's still highly likely it catches errors
+        ///   c) it's nontrivial to write an impl of these tests which associates the kind with the
+        ///      event
+        #[allow(clippy::missing_const_for_fn)] // this is a false positive
+        fn event_kind_counts(self, debate: usize, speech: usize) -> Self {
+            Self {
+                expected_debate_events: Some(debate),
+                expected_speech_events: Some(speech),
                 ..self
             }
         }
@@ -176,6 +243,8 @@ mod tests {
         TestCase::from_file_name("npdi")
             .name("National Parliamentary Debate Invitational")
             .events(vec!["JV Parli", "Open Parli"])
+            .event_abbrs(vec!["JV", "Open"])
+            .event_kind_counts(2, 0)
             .start_date(2020, 11, 14)
             .end_date(2020, 11, 16)
             .run()
@@ -213,6 +282,12 @@ mod tests {
                 "Open Public Forum",
                 "Parliamentary",
                 "World School Debate",
+            ])
+            .event_kind_counts(9, 16) // congress and worlds are considered separate
+            .event_abbrs(vec![
+                "JVCX", "N DI", "N Ext", "N HI", "N Imp", "N Inf", "N LD", "N OI", "N OO", "N CX",
+                "N POI", "N PF", "O Con", "O DI", "O Ext", "O HI", "O Imp", "O Inf", "CA LD",
+                "TOCLD", "O OI", "O OO", "O CX", "O POI", "O PF", "Parli", "WSD",
             ])
             .start_date(2020, 9, 19)
             .end_date(2020, 9, 22)
