@@ -11,10 +11,12 @@ keywords = ["debate", "statistics"]
 categories = ["mathematics"]
 
 [dependencies]
+chrono = "0.4.19"
 quick-xml = { version = "0.22.0", features = ["serialize"] }
 reqwest = { version = "0.11.3", features = ["blocking"] }
 serde = { version = "1.0.126", features = ["derive"] }
 url = "2.2.2"
 
 [dev-dependencies]
+serde_path_to_error = "0.1.4"
 version-sync = "0.9.2"

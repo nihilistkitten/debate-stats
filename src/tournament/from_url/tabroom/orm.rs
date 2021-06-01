@@ -1,5 +1,6 @@
 //! A (very crude) ORM for mapping the tabroom API.
 
+use chrono::NaiveDate;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -8,12 +9,28 @@ pub(super) struct Tourn {
     pub id: i32,
     #[serde(rename = "TOURNNAME")]
     pub tourn_name: String,
-    #[serde(rename = "STARTDATE")]
-    pub start_date: String,
+    #[serde(rename = "STARTDATE", with = "tabroom_dates")]
+    pub start_date: NaiveDate,
     #[serde(rename = "ENDDATE")]
     pub end_date: String,
     #[serde(rename = "DOWNLOADSITE")]
     pub download_site: String,
+}
+
+mod tabroom_dates {
+    // https://serde.rs/custom-date-format.html
+    use chrono::NaiveDate;
+    use serde::{self, Deserialize, Deserializer};
+
+    const FORMAT: &str = "%m/%d/%Y";
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<NaiveDate, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        NaiveDate::parse_from_str(&s, FORMAT).map_err(serde::de::Error::custom)
+    }
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -122,7 +139,7 @@ pub(super) struct Round {
     #[serde(rename = "LABEL")]
     pub label: String,
     #[serde(rename = "FLIGHTING")]
-    pub flighting: bool,
+    pub flighting: i32,
     #[serde(rename = "JUDGESPERPANEL")]
     pub judges_per_panel: i32,
     #[serde(rename = "JUDGEPLACESCHEME")]
@@ -186,7 +203,7 @@ pub(super) struct BallotScore {
     #[serde(rename = "SPEECH")]
     pub speech: i32,
     #[serde(rename = "SCORE")]
-    pub score: i32,
+    pub score: f32,
 }
 
 #[derive(Debug, Deserialize, PartialEq)]

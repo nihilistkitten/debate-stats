@@ -14,6 +14,8 @@ pub type Result<T> = StdResult<T, Error>;
 #[derive(Debug)]
 pub enum Error {
     /// An invalid URL was passed.
+    ///
+    /// Note that URLs must include the protocol; i.e. `https://` or `http://`.
     UrlConversion {
         /// The URL that failed to convert.
         invalid_url: String,
