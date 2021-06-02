@@ -4,15 +4,15 @@ use super::orm;
 use crate::{Event, Result, Tournament};
 use quick_xml::de;
 
+/// A result returned by tournament deserialization
+type DeResult = std::result::Result<orm::TournamentResults, de::DeError>;
+
 /// Process the XML into a Tournament.
 pub(super) fn process_api(xml: &str) -> Result<Tournament> {
     process_api_impl(xml, de::from_str)
 }
 
-fn process_api_impl(
-    xml: &str,
-    deserializer: impl FnOnce(&str) -> std::result::Result<orm::TournamentResults, de::DeError>,
-) -> Result<Tournament> {
+fn process_api_impl(xml: &str, deserializer: impl FnOnce(&str) -> DeResult) -> Result<Tournament> {
     // this takes the generic parameter so it can be used for inspect_serde in the TestCase struct
     let api = deserializer(xml)?;
 
@@ -34,11 +34,9 @@ mod tests {
     use crate::util::test::{Input, TournamentTestCase};
 
     /// This uses `serde_path_to_error` to figure out where in the serialized data the error is.
-    fn deserialize_and_inspect_error(
-        xml: &str,
-    ) -> std::result::Result<orm::TournamentResults, de::DeError> {
-        // create the deserialized
-        let d = &mut quick_xml::de::Deserializer::from_reader(xml.as_bytes());
+    fn deserialize_and_inspect_error(xml: &str) -> DeResult {
+        // create the deserializer
+        let d = &mut de::Deserializer::from_reader(xml.as_bytes());
 
         // let serde_path_to_error do its thing
         // the type annotation is necessary
@@ -62,13 +60,13 @@ mod tests {
 
     impl XmlInput {
         fn from_file_name(name: &str) -> Self {
-            let xml = std::fs::read_to_string(format!(
+            std::fs::read_to_string(format!(
                 "{}/resources/test/{}.xml",
                 env!("CARGO_MANIFEST_DIR"),
                 name
             ))
-            .expect("The file name must be valid.");
-            Self(xml)
+            .expect("The file name must be valid.")
+            .into()
         }
     }
 
@@ -83,7 +81,8 @@ mod tests {
     }
 
     impl TournamentTestCase<XmlInput, bool> {
-        #[allow(dead_code)] // turn this on if you want to see where the serde error happened
+        #[allow(dead_code)]
+        /// Turn this on if you want to see where the serde error happened
         fn inspect_serde(self) -> Self {
             self.config(true)
         }
