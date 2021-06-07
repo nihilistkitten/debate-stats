@@ -1,11 +1,16 @@
 //! For representing a single event.
 
+use std::fmt::Display;
+
+use crate::Entry;
+
 /// A single event.
 #[derive(Debug)]
 pub struct Event {
     abbr: String,
     name: String,
     kind: EventKind,
+    entries: Vec<Entry>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -32,9 +37,33 @@ impl From<String> for EventKind {
     }
 }
 
+impl Display for EventKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let message = match self {
+            Self::Debate => "debate",
+            Self::Speech => "speech",
+            Self::Other(s) => s,
+        };
+        write!(f, "{}", message)
+    }
+}
+
 impl Event {
+    /// Create a new event.
+    ///
+    /// The new event has no entries.
     pub(crate) const fn new(abbr: String, name: String, kind: EventKind) -> Self {
-        Self { abbr, name, kind }
+        Self {
+            abbr,
+            name,
+            kind,
+            entries: vec![],
+        }
+    }
+
+    /// Push an entry
+    pub(crate) fn push_entry(&mut self, entry: Entry) {
+        self.entries.push(entry);
     }
 
     /// Get a reference to the event's name.
@@ -50,6 +79,12 @@ impl Event {
     #[must_use]
     pub fn abbr(&self) -> &str {
         &self.abbr
+    }
+
+    /// Get a reference to the event's entries.
+    #[must_use]
+    pub const fn entries(&self) -> &Vec<Entry> {
+        &self.entries
     }
 
     /// Get a reference to the event's [kind](EventKind).
@@ -89,5 +124,19 @@ mod tests {
     fn event_kind_from_other_works() {
         let kind = "unknown";
         assert_eq!(EventKind::Other(kind.into()), kind.to_string().into())
+    }
+
+    #[test]
+    fn event_new_has_no_entries() {
+        assert!(Event::new("".into(), "".into(), EventKind::Debate)
+            .entries()
+            .is_empty());
+    }
+
+    #[test]
+    fn push_entry_works() {
+        let mut event = Event::new("".into(), "".into(), EventKind::Debate);
+        event.push_entry(Entry::new("".into(), "".into()));
+        assert_eq!(event.entries().len(), 1)
     }
 }
