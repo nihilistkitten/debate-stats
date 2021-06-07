@@ -116,3 +116,44 @@ impl Tournament {
         &self.end_date
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::util::test::{ExpectedOutput, Input, TournamentTest};
+
+    struct UrlInput(String);
+
+    impl From<&str> for UrlInput {
+        fn from(url: &str) -> Self {
+            Self(url.into())
+        }
+    }
+
+    impl Input<(), Tournament> for UrlInput {
+        fn under_test(self, _: ()) -> Tournament {
+            Tournament::from_url(&self.0)
+                .unwrap_or_else(|e| panic!("tournament construction failed: {:?}", e))
+        }
+    }
+
+    #[test]
+    #[ignore = "the tab api randomly 404s"]
+    fn from_url_works_npdi() {
+        TournamentTest::npdi()
+            .input(UrlInput::from(
+                "https://www.tabroom.com/index/tourn/index.mhtml?tourn_id=17253",
+            ))
+            .run()
+    }
+
+    #[test]
+    #[ignore = "the tab api randomly 404s"]
+    fn from_url_works_jack_howe() {
+        TournamentTest::jack_howe()
+            .input(UrlInput::from(
+                "https://www.tabroom.com/index/tourn/index.mhtml?tourn_id=16814",
+            ))
+            .run()
+    }
+}

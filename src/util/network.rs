@@ -1,5 +1,7 @@
 //! Utilities related to networking.
 
+use std::time::Duration;
+
 use crate::{Error, Result};
 use reqwest::blocking::{Client, Response};
 use url::Url;
@@ -14,7 +16,15 @@ pub fn fetch_url(url: Url, client: Option<Client>) -> Result<Response> {
     // The ? and the immediate Ok is a little janky, but we apparently need this because our `From`
     // impl is for `Error` and not `Result`, and we can't impl it for `Result` because it's a
     // foreign type (it's an alias, not a newtype).
-    Ok(client.unwrap_or_default().get(url).send()?)
+    Ok(client
+        .unwrap_or(
+            Client::builder()
+                // tabroom sometimes takes a long time to build the api
+                .timeout(Duration::from_secs(100))
+                .build()?,
+        )
+        .get(url)
+        .send()?)
 }
 
 #[cfg(test)]
