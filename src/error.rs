@@ -26,7 +26,7 @@ pub enum Error {
     /// The URL was from an unsupported tournament hosting platform.
     ///
     /// Only certain tournament hosts are supported; see
-    /// [`Tournament::from_url`](crate::Tournament::from_url)
+    /// [`Tournament::from_url`](crate::Tournament::from_url).
     UnsupportedHost(String),
 
     /// A tournament HTML page failed to parse.

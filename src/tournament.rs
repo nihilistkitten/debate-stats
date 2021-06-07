@@ -40,13 +40,15 @@ impl Tournament {
         Self::from_url_impl(url)
     }
 
-    /// Get a reference to the tournament's name.
+    /// The tournament's name.
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name
     }
 
-    /// Get a reference to the tournament's events.
+    /// The tournament's events.
+    ///
+    /// Note that we make no ordering guarantee; events may appear in any order.
     ///
     /// # Example
     /// ```no_run
@@ -56,18 +58,21 @@ impl Tournament {
     /// #
     /// let url = "https://www.tabroom.com/index/tourn/index.mhtml?tourn_id=17253";
     /// let tournament = Tournament::from_url(url)?;
-    /// assert_eq!(tournament.events()[0].name(), "JV Parli");
-    /// assert_eq!(tournament.events()[1].name(), "Open Parli");
+    /// assert!(tournament.events().iter().any(|e| e.name() == "JV Parli"));
+    /// assert!(tournament.events().iter().any(|e| e.name() == "Open Parli"));
     /// #
     /// # Ok(())
     /// # }
     /// ```
+    /// Note the use of [`Iterator::any`]; this is because of the lack of ordering guarantees.
     #[must_use]
     pub const fn events(&self) -> &Vec<Event> {
         &self.events
     }
 
-    /// Get a reference to the tournament's start date.
+    /// The tournament's start date.
+    ///
+    /// This and the end date are [`NaiveDate`]s because tabroom doesn't provide time zone data.
     ///
     /// # Example
     /// ```no_run
@@ -87,7 +92,7 @@ impl Tournament {
         &self.start_date
     }
 
-    /// Get a reference to the tournament's end date.
+    /// The tournament's end date.
     ///
     /// Note that this is one day after the last day of the tournament; i.e., a day later than the
     /// end of the range displayed in the "Tournament" section under "Dates & Deadlines" in the tab

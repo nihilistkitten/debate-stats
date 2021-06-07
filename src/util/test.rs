@@ -221,7 +221,7 @@ impl TournamentTest {
     }
 
     /// Generate the NPDI test case.
-    #[allow(clippy::clippy::too_many_lines)] // this is just setting up the test case
+    #[allow(clippy::too_many_lines)] // this is just setting up the test case
     pub fn npdi() -> Self {
         Self::new(
             "National Parliamentary Debate Invitational",

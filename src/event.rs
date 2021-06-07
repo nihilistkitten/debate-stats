@@ -14,7 +14,7 @@ pub struct Event {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-/// The kind of event.
+/// The possible kinds of events.
 #[allow(clippy::module_name_repetitions)] // this seems warranted here
 pub enum EventKind {
     /// A debate event.
@@ -66,13 +66,13 @@ impl Event {
         self.entries.push(entry);
     }
 
-    /// Get a reference to the event's name.
+    /// The event's name.
     #[must_use]
     pub fn name(&self) -> &str {
         &self.name
     }
 
-    /// Get a reference to the event's abbreviation.
+    /// The event's abbreviation.
     ///
     /// Think "VPD" instead of "Varsity Parliamentary Debate;" different tournaments obviously have
     /// different schemes.
@@ -81,13 +81,15 @@ impl Event {
         &self.abbr
     }
 
-    /// Get a reference to the event's entries.
+    /// The event's entries.
     #[must_use]
     pub const fn entries(&self) -> &Vec<Entry> {
         &self.entries
     }
 
-    /// Get a reference to the event's [kind](EventKind).
+    /// The kind of event (i.e., the subcategory of forensics).
+    ///
+    /// For more info see [`EventKind`].
     #[must_use]
     pub const fn kind(&self) -> &EventKind {
         &self.kind
